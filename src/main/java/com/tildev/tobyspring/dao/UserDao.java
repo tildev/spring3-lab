@@ -24,6 +24,18 @@ import com.tildev.tobyspring.domain.UserDto;
  */
 public class UserDao {
 
+	@Value("${jdbc.driver}")
+	private String jdbcDriver;
+
+	@Value("${jdbc.url}")
+	private String jdbcUrl;
+
+	@Value("${jdbc.username}")
+	private String jdbcUsername;
+
+	@Value("${jdbc.password}")
+	private String jdbcPassword;
+
 	private void insertValue() throws IOException {
 
 		ClassLoader cl;
@@ -53,24 +65,34 @@ public class UserDao {
 		}
 	}
 
-	@Value("${jdbc.driver}")
-	private String jdbcDriver;
-
-	@Value("${jdbc.url}")
-	private String jdbcUrl;
-
-	@Value("${jdbc.username}")
-	private String jdbcUsername;
-
-	@Value("${jdbc.password}")
-	private String jdbcPassword;
-
-	public void add(UserDto user) throws ClassNotFoundException, SQLException, IOException {
-
+	/**
+	 * getConnection 리펙토링 **관심사의 분리** 중복되는 사항을 뽑아내자. - 메소드 추출 기법
+	 * 
+	 * @return
+	 * @throws IOException
+	 * @throws ClassNotFoundException
+	 * @throws SQLException
+	 */
+	private Connection getConnection() throws IOException, ClassNotFoundException, SQLException {
 		insertValue();
 
 		Class.forName(jdbcDriver);
 		Connection c = DriverManager.getConnection(jdbcUrl, jdbcUsername, jdbcPassword);
+
+		return c;
+	}
+
+	/**
+	 * add
+	 * 
+	 * @param user
+	 * @throws ClassNotFoundException
+	 * @throws SQLException
+	 * @throws IOException
+	 */
+	public void add(UserDto user) throws ClassNotFoundException, SQLException, IOException {
+
+		Connection c = getConnection();
 
 		PreparedStatement ps = c.prepareStatement("insert into users(userid, name, password) values(?, ?, ?)");
 		ps.setString(1, user.getId());
@@ -83,11 +105,17 @@ public class UserDao {
 		c.close();
 	}
 
+	/**
+	 * get
+	 * 
+	 * @param userId
+	 * @return
+	 * @throws ClassNotFoundException
+	 * @throws SQLException
+	 * @throws IOException
+	 */
 	public UserDto get(String userId) throws ClassNotFoundException, SQLException, IOException {
-		insertValue();
-		Class.forName(jdbcDriver);
-
-		Connection c = DriverManager.getConnection(jdbcUrl, jdbcUsername, jdbcPassword);
+		Connection c = getConnection();
 
 		PreparedStatement ps = c.prepareStatement("select * from users where userid = ?");
 		ps.setString(1, userId);
@@ -111,9 +139,9 @@ public class UserDao {
 		UserDao dao = new UserDao();
 
 		UserDto user = new UserDto();
-		user.setId("id6");
-		user.setName("이름6");
-		user.setPassword("pass6");
+		user.setId("id7");
+		user.setName("이름7");
+		user.setPassword("pass7");
 
 		dao.add(user);
 
