@@ -17,14 +17,14 @@ import com.tildev.tobyspring.domain.UserDto;
  */
 public class UserDao {
 
-	// 상태를 관리하는 것이 아니므로, 한 번만 만들어 인스턴스 변수에 저장해두고 메소드에서 사용하게 한다.
-	private SimpleConnectionMaker simpleConnectionMaker;
+	private ConnectionMaker connectionMaker;
 
 	/**
 	 * @param simpleConnectionMaker
 	 */
 	public UserDao() {
-		this.simpleConnectionMaker = new SimpleConnectionMaker();
+		// 여전히 클래스 안에서 종속된다. 수정 필요!
+		connectionMaker = new NConnectionMaker();
 	}
 
 	/**
@@ -36,7 +36,7 @@ public class UserDao {
 	 * @throws IOException
 	 */
 	public void add(UserDto user) throws ClassNotFoundException, SQLException, IOException {
-		Connection c = simpleConnectionMaker.getConnection();
+		Connection c = connectionMaker.makeConnection();
 
 		PreparedStatement ps = c.prepareStatement("insert into users(userid, name, password) values(?, ?, ?)");
 		ps.setString(1, user.getId());
@@ -59,7 +59,7 @@ public class UserDao {
 	 * @throws IOException
 	 */
 	public UserDto get(String userId) throws ClassNotFoundException, SQLException, IOException {
-		Connection c = simpleConnectionMaker.getConnection();
+		Connection c = connectionMaker.makeConnection();
 
 		PreparedStatement ps = c.prepareStatement("select * from users where userid = ?");
 		ps.setString(1, userId);
@@ -83,9 +83,9 @@ public class UserDao {
 		UserDao dao = new UserDao();
 
 		UserDto user = new UserDto();
-		user.setId("id10");
-		user.setName("이름10");
-		user.setPassword("pass10");
+		user.setId("id12");
+		user.setName("이름12");
+		user.setPassword("pass12");
 
 		dao.add(user);
 
