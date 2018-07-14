@@ -22,65 +22,39 @@ import com.tildev.tobyspring.domain.UserDto;
  * @author tildev
  * @date 2018. 7. 14.
  */
-public class UserDao {
+public abstract class UserDao {
 
 	@Value("${jdbc.driver}")
-	private String jdbcDriver;
+	protected String jdbcDriver;
 
 	@Value("${jdbc.url}")
-	private String jdbcUrl;
+	protected String jdbcUrl;
 
 	@Value("${jdbc.username}")
-	private String jdbcUsername;
+	protected String jdbcUsername;
 
 	@Value("${jdbc.password}")
-	private String jdbcPassword;
-
-	private void insertValue() throws IOException {
-
-		ClassLoader cl;
-		cl = Thread.currentThread().getContextClassLoader();
-
-		if (cl == null) {
-			cl = ClassLoader.getSystemClassLoader();
-		}
-
-		URL url = cl.getResource("config/database.properties");
-
-		// 클래스 패스를 통해 info.property 있는 위치를 찾기
-		File propFile = new File(url.getPath());
-		FileInputStream is;
-
-		try {
-			is = new FileInputStream(propFile);
-			Properties props = new Properties();
-			props.load(is);
-
-			jdbcDriver = props.getProperty("jdbc.driver");
-			jdbcUrl = props.getProperty("jdbc.url");
-			jdbcUsername = props.getProperty("jdbc.username");
-			jdbcPassword = props.getProperty("jdbc.password");
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
+	protected String jdbcPassword;
 
 	/**
-	 * getConnection 리펙토링 **관심사의 분리** 중복되는 사항을 뽑아내자. - 메소드 추출 기법
+	 * 1. 템플릿 메소드 패턴 (template method pattern)
+	 * 슈퍼클래스에 기본적인 로직의 흐름을 만들고
+	 * 추상메소드나 오버라이딩이 가능한 protected 메소드 등으로 만들어
+	 * 서브 클래스에서 필요에 맞게 구현해서 사용하는 디자인 패턴
+	 * 
+	 * 2. 팩토리 메소드 패턴(factory method pattern)
+	 * 서브클래스에서 구체적인 오브젝트 생성 방법을 결정하게 하는 디자인 패턴
+	 * 
+	 * getConnection 을 상속을 받아 구현 
+	 * 
+	 * 문제점 : getConnection()의 구현 코드가 매 DAO 클래스마다 중복됨
 	 * 
 	 * @return
 	 * @throws IOException
 	 * @throws ClassNotFoundException
 	 * @throws SQLException
 	 */
-	private Connection getConnection() throws IOException, ClassNotFoundException, SQLException {
-		insertValue();
-
-		Class.forName(jdbcDriver);
-		Connection c = DriverManager.getConnection(jdbcUrl, jdbcUsername, jdbcPassword);
-
-		return c;
-	}
+	public abstract Connection getConnection() throws IOException, ClassNotFoundException, SQLException;
 
 	/**
 	 * add
@@ -136,12 +110,12 @@ public class UserDao {
 	}
 
 	public static void main(String[] args) throws ClassNotFoundException, SQLException, IOException {
-		UserDao dao = new UserDao();
+		UserDao dao = new NUserDao();
 
 		UserDto user = new UserDto();
-		user.setId("id7");
-		user.setName("이름7");
-		user.setPassword("pass7");
+		user.setId("id8");
+		user.setName("이름8");
+		user.setPassword("pass8");
 
 		dao.add(user);
 
@@ -150,5 +124,54 @@ public class UserDao {
 		UserDto user2 = dao.get(user.getId());
 		System.out.println(user2.getName());
 
+	}
+}
+
+class NUserDao extends UserDao {
+	private void insertValue() throws IOException {
+
+		ClassLoader cl;
+		cl = Thread.currentThread().getContextClassLoader();
+
+		if (cl == null) {
+			cl = ClassLoader.getSystemClassLoader();
+		}
+
+		URL url = cl.getResource("config/database.properties");
+
+		// 클래스 패스를 통해 info.property 있는 위치를 찾기
+		File propFile = new File(url.getPath());
+		FileInputStream is;
+
+		try {
+			is = new FileInputStream(propFile);
+			Properties props = new Properties();
+			props.load(is);
+
+			jdbcDriver = props.getProperty("jdbc.driver");
+			jdbcUrl = props.getProperty("jdbc.url");
+			jdbcUsername = props.getProperty("jdbc.username");
+			jdbcPassword = props.getProperty("jdbc.password");
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	@Override
+	public Connection getConnection() throws IOException, ClassNotFoundException, SQLException {
+		insertValue();
+
+		Class.forName(jdbcDriver);
+		Connection c = DriverManager.getConnection(jdbcUrl, jdbcUsername, jdbcPassword);
+
+		return c;
+	}
+}
+
+class DUserDao extends UserDao {
+
+	@Override
+	public Connection getConnection() throws IOException, ClassNotFoundException, SQLException {
+		return null;
 	}
 }
